@@ -1,0 +1,124 @@
+local Player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local IsActive = false
+local Platform = nil
+local Speed = 50
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RexoneFlyGui"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 160, 0, 110)
+MainFrame.Position = UDim2.new(0.5, -80, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true 
+MainFrame.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "Fly By Rexone"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
+Title.Parent = MainFrame
+
+local SpeedInput = Instance.new("TextBox")
+SpeedInput.Size = UDim2.new(1, -20, 0, 30)
+SpeedInput.Position = UDim2.new(0, 10, 0, 30)
+SpeedInput.Text = "50"
+SpeedInput.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+SpeedInput.TextColor3 = Color3.new(1, 1, 1)
+SpeedInput.BorderSizePixel = 0
+SpeedInput.Parent = MainFrame
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(1, -20, 0, 35)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 65)
+ToggleBtn.Text = "STATUS: OFF"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 0)
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Parent = MainFrame
+
+local function Cleanup()
+    IsActive = false
+    local char = Player.Character
+    local cam = workspace.CurrentCamera
+    if Platform then Platform:Destroy() Platform = nil end
+    ToggleBtn.Text = "STATUS: OFF"
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(130, 0, 0)
+    if char then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        if hrp then hrp.Anchored = false end
+        if hum then 
+            hum.PlatformStand = false 
+            cam.CameraSubject = hum
+        end
+    end
+end
+
+local function ToggleFly()
+    local char = Player.Character
+    if not char then return end
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+    local cam = workspace.CurrentCamera
+
+    if IsActive then Cleanup() return end
+
+    IsActive = true
+    ToggleBtn.Text = "STATUS: ON"
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 0)
+    Speed = tonumber(SpeedInput.Text) or 50
+
+    Platform = Instance.new("Part")
+    Platform.Name = "RexoneCore"
+    Platform.Size = Vector3.new(0.05, 0.05, 0.05)
+    Platform.CFrame = hrp.CFrame
+    Platform.Transparency = 1
+    Platform.Anchored = true
+    Platform.CanCollide = false
+    Platform.Parent = workspace
+
+    cam.CameraSubject = Platform
+    hum.PlatformStand = true
+    
+    task.spawn(function()
+        while IsActive and Platform and char.Parent do
+            local dt = RunService.RenderStepped:Wait()
+            local moveDir = hum.MoveDirection
+            
+            if moveDir.Magnitude > 0 then
+                local camCF = cam.CFrame
+                local combinedDir = (camCF.RightVector * (moveDir:Dot(camCF.RightVector))) + (camCF.LookVector * (moveDir:Dot(camCF.LookVector)))
+                local targetPos = Platform.Position + (combinedDir.Unit * Speed * dt)
+                Platform.CFrame = CFrame.new(targetPos, targetPos + cam.CFrame.LookVector)
+            else
+                Platform.CFrame = CFrame.new(Platform.Position, Platform.Position + cam.CFrame.LookVector)
+            end
+
+            hrp.CFrame = Platform.CFrame
+            hrp.Velocity = Vector3.new(0, 0, 0)
+            hrp.RotVelocity = Vector3.new(0, 0, 0)
+            
+            if cam.CameraSubject ~= Platform then
+                cam.CameraSubject = Platform
+            end
+        end
+    end)
+end
+
+ToggleBtn.MouseButton1Click:Connect(ToggleFly)
+Player.CharacterAdded:Connect(Cleanup)
