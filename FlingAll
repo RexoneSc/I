@@ -14,7 +14,7 @@ local lastSafePos = nil
 local isSwitching = false
 
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-ScreenGui.Name = "RexoneTikar_Clean"
+ScreenGui.Name = "RexoneTikar_FinalRelease"
 ScreenGui.ResetOnSpawn = false
 
 local Holder = Instance.new("Frame", ScreenGui)
@@ -43,12 +43,11 @@ Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
 local Frame = Instance.new("Frame", Holder)
 Frame.Name = "ContentFrame"
 Frame.LayoutOrder = 2
-local originalSize = UDim2.new(1, 0, 0, 230) 
+local originalSize = UDim2.new(1, 0, 0, 225) 
 Frame.Size = originalSize
 Frame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 Frame.BorderSizePixel = 0
 Frame.ClipsDescendants = true
-Frame.Visible = true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
 
 local ContentContainer = Instance.new("Frame", Frame)
@@ -61,8 +60,8 @@ ContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local ContentPadding = Instance.new("UIPadding", ContentContainer)
-ContentPadding.PaddingTop = UDim.new(0, 15)
-ContentPadding.PaddingBottom = UDim.new(0, 15)
+ContentPadding.PaddingTop = UDim.new(0, 12)
+ContentPadding.PaddingBottom = UDim.new(0, 12)
 
 local dragging, dragInput, dragStart, startPos
 local function update(input)
@@ -104,6 +103,7 @@ local AntiFlingBtn = CreateButton(1); AntiFlingBtn.Parent = Row2; AntiFlingBtn.S
 local EspBtn = CreateButton(2); EspBtn.Parent = Row2; EspBtn.Size = UDim2.new(0.5, -5, 1, 0)
 
 local AgresifFlingBtn = CreateButton(4)
+
 local MonContainer = Instance.new("Frame", ContentContainer); MonContainer.Size = UDim2.new(0, 330, 0, 30); MonContainer.LayoutOrder = 5; MonContainer.BackgroundTransparency = 1
 Instance.new("UIListLayout", MonContainer).FillDirection = Enum.FillDirection.Horizontal; MonContainer.UIListLayout.Padding = UDim.new(0, 5)
 
@@ -115,17 +115,6 @@ local PlayerStats = CreateStatBox(0.33)
 local PingStats = CreateStatBox(0.33)
 local FpsStats = CreateStatBox(0.34)
 
-local isRolling, guiVisible = false, true
-ToggleBtn.MouseButton1Click:Connect(function()
-    if isRolling then return end; isRolling = true
-    local targetSize = guiVisible and UDim2.new(1, 0, 0, 0) or originalSize
-    local targetText = guiVisible and "Fling By Rexone  [ ∨ ]" or "Fling By Rexone  [ ∧ ]"
-    local tween = TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize})
-    tween:Play()
-    tween.Completed:Connect(function() guiVisible = not guiVisible; isRolling = false end)
-    ToggleBtn.Text = targetText
-end)
-
 local function UpdateUI()
     AutoTPBtn.Text = "Auto TP: " .. (autoTPOn and "ON" or "OFF")
     AutoTPBtn.BackgroundColor3 = autoTPOn and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(170, 0, 50)
@@ -135,53 +124,51 @@ local function UpdateUI()
     AntiFlingBtn.BackgroundColor3 = antiOn and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(170, 0, 50)
     EspBtn.Text = "ESP: " .. (espOn and "ON" or "OFF")
     EspBtn.BackgroundColor3 = espOn and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(170, 0, 50)
-    AgresifFlingBtn.Text = "Aggressive Fling: " .. (agresifOn and "ON" or "OFF")
+    AgresifFlingBtn.Text = "Aggressive Fling (RISK!): " .. (agresifOn and "ON" or "OFF")
     AgresifFlingBtn.BackgroundColor3 = agresifOn and Color3.fromRGB(0, 170, 80) or Color3.fromRGB(170, 0, 50)
 end
 
 LocalPlayer.CharacterAdded:Connect(function()
-    lastSafePos = nil
-    currentTarget = nil
-    isSwitching = false
+    isSwitching = true; lastSafePos = nil; currentTarget = nil
+    task.wait(1); isSwitching = false
 end)
 
 RunService.RenderStepped:Connect(function(dt)
-    if espOn then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = p.Character.HumanoidRootPart
-                if not hrp:FindFirstChild("ESPGui") then
-                    local bg = Instance.new("BillboardGui", hrp); bg.Name = "ESPGui"; bg.Size = UDim2.new(0, 100, 0, 50); bg.AlwaysOnTop = true; bg.ExtentsOffset = Vector3.new(0, 3, 0)
-                    local tl = Instance.new("TextLabel", bg); tl.Name = "Tag"; tl.Size = UDim2.new(1, 0, 1, 0); tl.BackgroundTransparency = 1; tl.TextColor3 = Color3.new(0, 1, 0.5); tl.Font = Enum.Font.SourceSansBold; tl.TextSize = 14
+    PlayerStats.Text = "PLRS: "..#Players:GetPlayers()
+    PingStats.Text = "PING: "..math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+    FpsStats.Text = "FPS: "..math.floor(1/dt)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = p.Character.HumanoidRootPart
+            local gui = hrp:FindFirstChild("ESPGui")
+            if espOn then
+                if not gui then
+                    gui = Instance.new("BillboardGui", hrp); gui.Name = "ESPGui"; gui.Size = UDim2.new(0, 100, 0, 50); gui.AlwaysOnTop = true; gui.ExtentsOffset = Vector3.new(0, 3, 0)
+                    local tl = Instance.new("TextLabel", gui); tl.Name = "Tag"; tl.Size = UDim2.new(1, 0, 1, 0); tl.BackgroundTransparency = 1; tl.TextColor3 = Color3.new(0, 1, 0.5); tl.Font = Enum.Font.SourceSansBold; tl.TextSize = 14
                 end
-                hrp.ESPGui.Tag.Text = p.DisplayName.."\n["..math.floor((hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude).."m]"
-            end
+                local dist = math.floor((hrp.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude)
+                gui.Tag.Text = p.DisplayName.."\n["..dist.."m]"
+            else if gui then gui:Destroy() end end
         end
     end
-    PlayerStats.Text = "PLRS: "..#Players:GetPlayers(); PingStats.Text = "PING: "..math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()); FpsStats.Text = "FPS: "..math.floor(1/dt)
 end)
 
 RunService.Heartbeat:Connect(function()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum or hum.Health <= 0 then lastSafePos = nil return end
     if antiOn and not agresifOn and not isSwitching then
+        if hrp.Velocity.Magnitude > 75 then hrp.Velocity = Vector3.new(0, 0, 0) end
+        hrp.RotVelocity = Vector3.new(0, 0, 0)
         if lastSafePos then
-            local moveDist = (hrp.Position - lastSafePos).Magnitude
-            if moveDist > 20 then
-                hrp.CFrame = CFrame.new(lastSafePos)
-            else
-                lastSafePos = hrp.Position
-            end
-        else
-            lastSafePos = hrp.Position
-        end
+            local dist = (hrp.Position - lastSafePos).Magnitude
+            if dist > 35 and hum.MoveDirection.Magnitude == 0 and not autoTPOn then hrp.CFrame = CFrame.new(lastSafePos) else lastSafePos = hrp.Position end
+        else lastSafePos = hrp.Position end
     end
-
-    if agresifOn then 
+    if agresifOn and autoTPOn then 
         hrp.Velocity = Vector3.new(4000, 4000, 4000)
-        hrp.RotVelocity = Vector3.new(4000, 4000, 4000)
+        hrp.RotVelocity = Vector3.new(10000, 10000, 10000)
     else
         local v = hrp.Velocity; hrp.Velocity = v * 10000 + Vector3.new(0, 10000, 0); RunService.RenderStepped:Wait(); hrp.Velocity = v 
     end
@@ -190,21 +177,21 @@ end)
 local TPProxy = Instance.new("Part", workspace); TPProxy.Anchored = true; TPProxy.Transparency = 1; TPProxy.CanCollide = false; TPProxy.Size = Vector3.new(0.01, 0.01, 0.01)
 RunService.Heartbeat:Connect(function()
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp or isLanding then return end
+    if not hrp or isLanding or isSwitching then return end
     if autoTPOn then
         local inp = TargetBox.Text:upper()
         if inp == "ALL" or inp == "" then
             local list = {}
-            for _,p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then table.insert(list, p) end end
+            for _,p in pairs(Players:GetPlayers()) do 
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then table.insert(list, p) end 
+            end
             if not currentTarget or tick() - lastSwitch >= 3 then 
-                if #list > 0 then 
-                    isSwitching = true; allIndex = allIndex % #list + 1; currentTarget = list[allIndex]; lastSwitch = tick(); task.wait(0.1); isSwitching = false
-                end 
+                if #list > 0 then isSwitching = true; allIndex = allIndex % #list + 1; currentTarget = list[allIndex]; lastSafePos = nil; lastSwitch = tick(); task.wait(0.15); isSwitching = false end 
             end
         else
             local found = nil
-            for _,p in pairs(Players:GetPlayers()) do if p.Name:lower():find(inp:lower()) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then found = p break end end
-            if found ~= currentTarget then isSwitching = true; currentTarget = found; task.wait(0.1); isSwitching = false end
+            for _,p in pairs(Players:GetPlayers()) do if (p.Name:lower():find(inp:lower()) or p.DisplayName:lower():find(inp:lower())) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then found = p break end end
+            if found ~= currentTarget then isSwitching = true; currentTarget = found; lastSafePos = nil; task.wait(0.15); isSwitching = false end
         end
         if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
             local th = currentTarget.Character.HumanoidRootPart
@@ -214,10 +201,34 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-AutoTPBtn.MouseButton1Click:Connect(function() autoTPOn = not autoTPOn; if not autoTPOn then isLanding = true; task.wait(0.1); Camera.CameraSubject = LocalPlayer.Character.Humanoid; isLanding = false end; UpdateUI() end)
+AutoTPBtn.MouseButton1Click:Connect(function() 
+    autoTPOn = not autoTPOn
+    if not autoTPOn then 
+        agresifOn = false
+        isLanding = true; task.wait(0.1)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid") end
+        isLanding = false 
+    else lastSafePos = nil end
+    UpdateUI() 
+end)
+
+AgresifFlingBtn.MouseButton1Click:Connect(function() 
+    if autoTPOn then agresifOn = not agresifOn else agresifOn = false end
+    UpdateUI() 
+end)
+
 RotationBtn.MouseButton1Click:Connect(function() rotationOn = not rotationOn; UpdateUI() end)
+AntiFlingBtn.MouseButton1Click:Connect(function() antiOn = not antiOn; lastSafePos = nil; UpdateUI() end)
 EspBtn.MouseButton1Click:Connect(function() espOn = not espOn; UpdateUI() end)
-AntiFlingBtn.MouseButton1Click:Connect(function() antiOn = not antiOn; if not antiOn then lastSafePos = nil end; UpdateUI() end)
-AgresifFlingBtn.MouseButton1Click:Connect(function() agresifOn = not agresifOn; UpdateUI() end)
+
+local isRolling, guiVisible = false, true
+ToggleBtn.MouseButton1Click:Connect(function()
+    if isRolling then return end; isRolling = true
+    local targetSize = guiVisible and UDim2.new(1, 0, 0, 0) or originalSize
+    local targetText = guiVisible and "Fling By Rexone  [ ∨ ]" or "Fling By Rexone  [ ∧ ]"
+    local tween = TweenService:Create(Frame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize})
+    tween:Play(); tween.Completed:Connect(function() guiVisible = not guiVisible; isRolling = false end)
+    ToggleBtn.Text = targetText
+end)
 
 UpdateUI()
