@@ -14,7 +14,7 @@ local lastSafePos = nil
 local isSwitching = false
 
 local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-ScreenGui.Name = "RexoneTikar_FixedAgresif"
+ScreenGui.Name = "RexoneTikar_Clean"
 ScreenGui.ResetOnSpawn = false
 
 local Holder = Instance.new("Frame", ScreenGui)
@@ -180,11 +180,9 @@ RunService.Heartbeat:Connect(function()
     end
 
     if agresifOn then 
-        -- Power yang stabil agar tidak mental sendiri tapi tetap mematikan saat disentuh
         hrp.Velocity = Vector3.new(4000, 4000, 4000)
         hrp.RotVelocity = Vector3.new(4000, 4000, 4000)
     else
-        -- Normal Fling (Touch)
         local v = hrp.Velocity; hrp.Velocity = v * 10000 + Vector3.new(0, 10000, 0); RunService.RenderStepped:Wait(); hrp.Velocity = v 
     end
 end)
